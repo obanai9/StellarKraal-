@@ -53,8 +53,43 @@ const WhatsNewProvider = dynamic(() => import('@/components/WhatsNewProvider'), 
 });
 
 export const metadata: Metadata = {
-  title: "Handsoff",
-  description: "Handsoff application",
+  title: {
+    default: 'StellarKraal — Livestock Micro-Lending on Stellar',
+    template: '%s — StellarKraal',
+  },
+  description:
+    'Register livestock as collateral and access instant micro-loans on the Stellar network. Built for African emerging markets.',
+  keywords: ['micro-lending', 'Stellar', 'Soroban', 'livestock', 'collateral', 'DeFi', 'Africa'],
+  metadataBase: new URL('https://stellarkraal.io'),
+  alternates: { canonical: 'https://stellarkraal.io/' },
+  openGraph: {
+    type: 'website',
+    siteName: 'StellarKraal',
+    title: 'StellarKraal — Livestock Micro-Lending on Stellar',
+    description:
+      'Register livestock as collateral and access instant micro-loans on the Stellar network. Built for African emerging markets.',
+    url: 'https://stellarkraal.io/',
+    images: [
+      {
+        url: '/og-banner.png',
+        width: 1200,
+        height: 630,
+        alt: 'StellarKraal — Livestock Micro-Lending on Stellar',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'StellarKraal — Livestock Micro-Lending on Stellar',
+    description:
+      'Register livestock as collateral and access instant micro-loans on the Stellar network.',
+    images: ['/og-banner.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
 };
 
 /**
@@ -297,6 +332,8 @@ export default function RootLayout({
               <SkipToContent />
               <TopProgressBar />
               <SessionTimeoutBanner />
+              {/* Reconnect prompt on session expiry / external wallet disconnect — #1509 */}
+              <SessionExpiredModal />
               <NetworkMismatchBanner />
               <OfflineBanner />
               {/* Top utility nav — hidden when printing */}

@@ -13,10 +13,14 @@ import {
   X,
   User,
   HelpCircle,
+  Wallet,
+  LogOut,
+  ChevronDown,
 } from 'lucide-react';
 import { Icon } from '@/components/Icon';
 import ThemeToggle from './ThemeToggle';
 import { useWallet } from '@/hooks/useWallet';
+import { useOptionalWalletContext } from '@/context/WalletContext';
 import { useAtRiskLoans } from '@/hooks/useAtRiskLoans';
 import NotificationBadge from '@/components/NotificationBadge';
 import { NotificationBell, NotificationDrawer } from '@/components/NotificationDrawer';
@@ -83,14 +87,27 @@ export default function Navbar() {
   const walletDropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const router = useRouter();
-  const { address, connect, disconnect } = useWallet();
+  // Prefer the shared WalletContext (single source of truth, Issue #1509);
+  // fall back to a local useWallet() when rendered outside a WalletProvider.
+  const walletCtx = useOptionalWalletContext();
+  const localWallet = useWallet();
+  const { address, connect, disconnect } = walletCtx ?? localWallet;
   const { atRiskCount } = useAtRiskLoans();
   const shortcutsHelp = useShortcutsHelp();
   const { notifications, unreadCount, markRead, markAllRead, dismiss, dismissAll } =
     useNotifications();
 
-  /** Full auth-clearing disconnect — Issue #1208. */
+  /**
+   * Full auth-clearing disconnect — Issue #1208 / #1509.
+   * Clears wallet state, persisted keys and the session cookie, then
+   * redirects to the connect screen.
+   */
   function handleDisconnect() {
+    setWalletDropdownOpen(false);
+    if (walletCtx) {
+      walletCtx.disconnectAndClear();
+      return;
+    }
     disconnect();
     clearSessionCookie();
     router.push('/');
@@ -104,9 +121,17 @@ export default function Navbar() {
       }
     }
 
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setWalletDropdownOpen(false);
+    }
+
     if (walletDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('keydown', handleEscape);
+      };
     }
   }, [walletDropdownOpen]);
 

@@ -108,7 +108,7 @@ import { apiKeyRouter } from './middleware/apiKey';
 import { deduplicationMiddleware } from './middleware/deduplication';
 import { v2Router } from './routes/v2';
 import { createGraphQLMiddleware } from './graphql/server';
-import { registry, httpActiveConnections, httpRequestDurationSeconds, httpRequestsTotal } from './metrics';
+import { registry, httpActiveConnections, httpRequestDurationSeconds, httpRequestsTotal, updateActiveLoansGauge } from './metrics';
 import { fireAlert } from './utils/alerting';
 import { rules } from './utils/alertRules';
 import { healthRouter } from './routes/health';
@@ -208,7 +208,8 @@ app.use('/api/v1/health', healthRouter);
  * Exposes Prometheus-format metrics for scraping.
  * Includes default Node.js metrics (memory, CPU, event loop lag) plus
  * application-specific counters and histograms (HTTP requests, duration,
- * DB pool acquired/available/wait).
+ * DB pool acquired/available/wait) and business metrics (loan lifecycle
+ * counters, active_loans_total, contract_rpc_duration_seconds).
  *
  * When METRICS_TOKEN is configured, requires Authorization: Bearer <token>.
  * Otherwise, metrics are accessible without authentication (intended for
@@ -216,6 +217,7 @@ app.use('/api/v1/health', healthRouter);
  */
 app.get('/metrics', metricsAuthMiddleware, async (_req: Request, res: Response) => {
   try {
+    updateActiveLoansGauge(listActiveLoans());
     res.set('Content-Type', registry.contentType);
     res.end(await registry.metrics());
   } catch (err) {

@@ -64,123 +64,27 @@ interface StickyLoanActionProps {
   disabled?: boolean;
 }
 
-const STICKY_ACTION_CONFIG = {
-  repay: {
-    label: 'Repay loan',
-    buttonClass:
-      'bg-[color:var(--token-primary)] text-[color:var(--token-on-primary)] hover:bg-[color:var(--token-primary-hover)]',
-  },
-  liquidate: {
-    label: 'Liquidate loan',
-    buttonClass:
-      'bg-[color:var(--token-danger)] text-white hover:bg-[color:var(--token-danger)]/90',
-  },
-} as const;
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params;
 
-function StickyActionIcon({ action }: { action: StickyLoanActionType }) {
-  if (action === 'liquidate') {
-    return (
-      <svg
-        aria-hidden="true"
-        className="h-5 w-5"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={2}
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M12 9v3.75m0 3.75h.008M10.29 3.86L2.82 17a2 2 0 001.73 3h14.9a2 2 0 001.73-3L13.71 3.86a2 2 0 00-3.42 0z"
-        />
-      </svg>
-    );
-  }
-
-  return (
-    <svg
-      aria-hidden="true"
-      className="h-5 w-5"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={2}
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-4-4l4 4 4-4M5 21h14" />
-    </svg>
-  );
-}
-
-export function StickyLoanAction({
-  targetRef,
-  action,
-  onAction,
-  disabled = false,
-}: StickyLoanActionProps) {
-  const [isMounted, setIsMounted] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
-  const config = STICKY_ACTION_CONFIG[action];
-
-  useEffect(() => {
-    const target = targetRef.current;
-    if (!target) return;
-
-    let showTimer: ReturnType<typeof setTimeout> | undefined;
-    let hideTimer: ReturnType<typeof setTimeout> | undefined;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (showTimer) clearTimeout(showTimer);
-        if (hideTimer) clearTimeout(hideTimer);
-
-        const hasScrolledPast = !entry.isIntersecting && entry.boundingClientRect.bottom < 0;
-
-        if (hasScrolledPast) {
-          setIsMounted(true);
-          showTimer = setTimeout(() => setIsVisible(true), 0);
-        } else {
-          setIsVisible(false);
-          hideTimer = setTimeout(() => setIsMounted(false), 150);
-        }
-      },
-      { threshold: 0 }
-    );
-
-    observer.observe(target);
-
-    return () => {
-      observer.disconnect();
-      if (showTimer) clearTimeout(showTimer);
-      if (hideTimer) clearTimeout(hideTimer);
-    };
-  }, [targetRef]);
-
-  if (!isMounted) return null;
-
-  return (
-    <div
-      role="region"
-      aria-label="Quick loan action"
-      aria-live="polite"
-      aria-atomic="true"
-      aria-hidden={!isVisible}
-      inert={!isVisible}
-      data-visible={isVisible}
-      className={`fixed inset-x-0 bottom-16 z-50 border-t px-4 pb-2 pt-1 shadow-lg transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none sm:hidden ${
-        isVisible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-2 opacity-0'
-      } border-[color:var(--token-border)] bg-[color:var(--token-surface-raised)]`}
-    >
-      <button
-        type="button"
-        onClick={onAction}
-        disabled={disabled}
-        className={`flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--token-accent)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${config.buttonClass}`}
-      >
-        <StickyActionIcon action={action} />
-        {config.label}
-      </button>
-    </div>
-  );
+  return {
+    title: `Loan #${id}`,
+    description: `View the terms, collateral details, repayment status, and health factor for loan ${id} on StellarKraal.`,
+    alternates: { canonical: `https://stellarkraal.io/loans/${id}` },
+    openGraph: {
+      title: `Loan #${id} — StellarKraal`,
+      description: `Livestock-backed micro-loan ${id}: collateral details, repayment terms, and on-chain status.`,
+      url: `https://stellarkraal.io/loans/${id}`,
+      images: [
+        {
+          url: '/og-banner.png',
+          width: 1200,
+          height: 630,
+          alt: `StellarKraal loan #${id}`,
+        },
+      ],
+    },
+  };
 }
 
 export default function LoanDetailPage() {
@@ -535,3 +439,5 @@ export default function LoanDetailPage() {
     </main>
   );
 }
+
+export { StickyLoanAction };
